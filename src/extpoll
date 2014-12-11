@@ -1,0 +1,110 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Getopt::Long;
+use Pod::Usage;
+
+my $PROG = '/usr/bin/find';
+my @PRMS = ('-type', 'f');
+my ($exts, $help);
+
+sub countByExt
+{
+	my %h = ();
+	my $fname;
+	my $ext;
+	open(my $fh, '-|', $PROG, (@_, @PRMS)) or die;
+	while($fname = <$fh>)
+	{
+		$fname =~ s/^\s+|\s+$//g;
+		$fname =~ m/([^\/]+)$/g;
+		$fname = $1;
+		$fname =~ m/([^.]+)$/g;
+		$ext = $1;
+		# exclude filenames without extension
+		if ($ext ne $fname and ".${ext}" ne $fname) {$h{lc($ext)} ++;}
+	}
+	close($fh);
+	my @ks = sort(keys(%h));
+	print("Frequency  Extension\n");
+	for my $k (@ks)
+	{
+		printf("%9d  %s\n", $h{$k}, $k);
+	}
+}
+
+sub main
+{
+	my @prms = ();
+
+	if (0 < scalar(@ARGV))
+	{
+		@prms = (@prms, @ARGV);
+	}
+
+	if ($exts)
+	{
+		@prms =
+		(
+			@prms
+			, (
+				'-regextype'
+				, 'posix-basic'
+				, '-iregex'
+				, '^.*\\.\\(' . join('\\|', split(/\s*,\s*/, $exts))
+					. '\\)$'
+			)
+		);
+	}
+
+	countByExt(@prms);
+}
+
+GetOptions
+(
+	'e|extensions=s' => \$exts
+	, 'h|help|?' => \$help
+) or pod2usage(2);
+
+pod2usage(1) if ($help);
+
+main();
+
+__END__
+
+=head1 NAME
+
+extpoll - Count file extensions
+
+=head1 SYNOPSIS
+
+extpoll [options] [directory ...]
+
+=head1 OPTIONS
+
+=over
+
+=item B<-e, --extensions> EXTENSIONS
+
+A list of extensions separated by commas
+
+=item B<-?, -h, --help>
+
+Print this message.
+
+=back
+
+=head1 DESCRIPTION
+
+This program search, groups, and counts files according to their extensions.
+
+=head1 AUTHOR
+
+Chun-Kwong Wong (http://github.com/shinkou/)
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is released under the MIT license.
+
+=cut
