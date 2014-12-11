@@ -5,7 +5,7 @@ use warnings;
 use Getopt::Long;
 use Pod::Usage;
 
-my $PROG = '/usr/bin/find';
+my $PROG = 'find';
 my @PRMS = ('-type', 'f');
 my ($exts, $help);
 
