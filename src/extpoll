@@ -2,74 +2,61 @@
 
 use strict;
 use warnings;
+use File::Find;
 use Getopt::Long;
 use Pod::Usage;
 
-my $PROG = 'find';
-my @PRMS = ('-type', 'f');
-my ($exts, $help);
+my ($extensions, $help);
 
-sub countByExt
+sub start
 {
-	my %h = ();
-	my $fname;
-	my $ext;
-	open(my $fh, '-|', $PROG, (@_, @PRMS)) or die;
-	while($fname = <$fh>)
+	my @dirs = @_;
+	my $h = {};
+	my %exts = ();
+	if ($extensions)
 	{
-		$fname =~ s/^\s+|\s+$//g;
-		$fname =~ m/([^\/]+)$/g;
-		$fname = $1;
-		$fname =~ m/([^.]+)$/g;
-		$ext = $1;
-		# exclude filenames without extension
-		if ($ext ne $fname and ".${ext}" ne $fname) {$h{lc($ext)} ++;}
+		%exts = (map{$_ => 1} split(/\s*,\s*/, $extensions));
 	}
-	close($fh);
-	my @ks = sort(keys(%h));
+
+	find
+	(
+		sub
+		{
+			my $fn = $_;
+
+			if ($fn =~ /([^.]+)$/)
+			{
+				my $ext = $1;
+				# exclude filenames without extension
+				if ($ext ne $fn and ".${ext}" ne $fn)
+				{
+					if (! %exts or $exts{$ext})
+					{
+						$h->{lc($ext)} ++;
+					}
+				}
+			}
+		}
+		, @dirs
+	);
+
+	my @ks = sort(keys(%{$h}));
 	print("Frequency  Extension\n");
 	for my $k (@ks)
 	{
-		printf("%9d  %s\n", $h{$k}, $k);
+		printf("%9d  %s\n", $h->{$k}, $k);
 	}
-}
-
-sub main
-{
-	my @prms = ();
-
-	if (0 < scalar(@ARGV))
-	{
-		@prms = (@prms, @ARGV);
-	}
-
-	if ($exts)
-	{
-		@prms =
-		(
-			@prms
-			, (
-				'-regextype'
-				, 'posix-basic'
-				, '-iregex'
-				, '^.*\\.\\(' . join('\\|', split(/\s*,\s*/, $exts))
-					. '\\)$'
-			)
-		);
-	}
-
-	countByExt(@prms);
 }
 
 GetOptions
 (
-	'e|extensions=s' => \$exts
+	'e|extensions=s' => \$extensions
 	, 'h|help|?' => \$help
 ) or pod2usage(2);
 
 pod2usage(1) if ($help);
 
-main();
+start(@ARGV);
 
 __END__
 

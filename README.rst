@@ -8,4 +8,3 @@ Requirement
 -----------
 
 - **Perl** (5 or above)
-- **find**
