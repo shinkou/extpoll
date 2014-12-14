@@ -56,7 +56,7 @@ GetOptions
 
 pod2usage(1) if ($help);
 
-start(@ARGV);
+(scalar @ARGV) ? start(@ARGV) : start('.');
 
 __END__
 
